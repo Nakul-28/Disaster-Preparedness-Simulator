@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: dps-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: disaster2024
+      MONGO_INITDB_DATABASE: disaster_prep
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - dps-network
+
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dps-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://admin:disaster2024@mongodb:27017
+      - ML_ENGINE_URL=http://ml-engine:8001
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - mongodb
+    networks:
+      - dps-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ML Engine Service
+  ml-engine:
+    build:
+      context: ./ml-engine
+      dockerfile: Dockerfile
+    container_name: dps-ml-engine
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_PATH=/app/models
+      - ENVIRONMENT=development
+    volumes:
+      - ./ml-engine:/app
+      - ml_models:/app/models
+    networks:
+      - dps-network
+    command: uvicorn serve:app --host 0.0.0.0 --port 8001 --reload
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dps-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000/ws
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - dps-network
+    command: npm start
+
+volumes:
+  mongodb_data:
+    driver: local
+  ml_models:
+    driver: local
+
+networks:
+  dps-network:
+    driver: bridge
