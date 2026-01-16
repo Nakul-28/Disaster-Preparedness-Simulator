@@ -1,4 +1,5 @@
-# 🚨 Disaster Preparedness Simulator
+# Pralaysetu: Bridge through Catastrophe
+## 🚨 Disaster Preparedness Simulator
 
 **An AI-driven decision-support platform for optimizing emergency response strategies.**
 
