@@ -29,7 +29,7 @@ This project simulates disaster scenarios (e.g., urban earthquakes) to train eme
 
 ## ⚙️ System Architecture
 
-![alt text](<System Architecture.png>)
+![alt text](<images/System Architecture.png>)
 
 
 
